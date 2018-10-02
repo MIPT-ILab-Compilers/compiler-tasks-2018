@@ -7,5 +7,5 @@ To build lexer:
 To test you changes:
  $ perl pa1-grading.pl
 
-You need modify cool.flex to pass all tests. 
+You need modify "cool.flex" file to pass all tests. 
 Good luck!
