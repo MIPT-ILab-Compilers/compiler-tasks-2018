@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <iostream>  
+#include <string>
 #include "cool-tree.h"
 #include "stringtab.h"
 #include "symtab.h"
@@ -24,7 +25,7 @@ private:
   int semant_errors;
   void install_basic_classes();
   ostream& error_stream;
-
+  class_list_type *class_list;
 public:
   ClassTable(Classes);
   int errors() { return semant_errors; }

@@ -8,13 +8,20 @@
 #include "tree.h"
 #include "cool.h"
 #include "stringtab.h"
+#include "symtab.h"
 #define yylineno curr_lineno;
 extern int yylineno;
 
-inline Boolean copy_Boolean(Boolean b) {return b; }
-inline void assert_Boolean(Boolean) {}
-inline void dump_Boolean(ostream& stream, int padding, Boolean b)
-	{ stream << pad(padding) << (int) b << "\n"; }
+inline Boolean copy_Boolean(Boolean b) {
+    return b;
+}
+
+inline void assert_Boolean(Boolean) {
+}
+
+inline void dump_Boolean(ostream& stream, int padding, Boolean b) {
+    stream << pad(padding) << (int) b << "\n";
+}
 
 void dump_Symbol(ostream& stream, int padding, Symbol b);
 void assert_Symbol(Symbol b);
@@ -32,6 +39,11 @@ class Expression_class;
 typedef Expression_class *Expression;
 class Case_class;
 typedef Case_class *Case;
+// Define lists for environment
+typedef SymbolTable<Symbol, Class__class> class_list_type;
+typedef SymbolTable<Symbol, tree_node> attr_list_type;
+typedef SymbolTable<Symbol, tree_node> method_list_type;
+
 
 typedef list_node<Class_> Classes_class;
 typedef Classes_class *Classes;

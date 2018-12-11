@@ -59,6 +59,8 @@ public:
     virtual void dump(ostream& stream, int n) = 0;
     int get_line_number();
     tree_node *set(tree_node *);
+    virtual Symbol get_type();
+    virtual Symbol get_name();
 };
 
 ///////////////////////////////////////////////////////////////////

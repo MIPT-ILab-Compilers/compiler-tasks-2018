@@ -11,7 +11,7 @@
 
 #include "tree.h"
 #include "cool-tree.handcode.h"
-
+#include "symtab.h"
 
 // define the class for phylum
 // define simple phylum - Program
@@ -34,9 +34,16 @@ class Class__class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Class_(); }
    virtual Class_ copy_Class_() = 0;
+   virtual Symbol get_name() = 0;
+   virtual void fill_table(class_list_type*) = 0;
+   virtual void semant(class_list_type*,attr_list_type*,method_list_type*) = 0;
+
+   virtual Symbol get_parent() = 0;
+   virtual void dump_with_types(ostream&,int) = 0;
+   virtual attr_list_type *get_attr() = 0;
+   virtual method_list_type *get_methods() = 0;
 
    virtual Symbol get_filename() = 0;
-   virtual void dump_with_types(ostream&,int) = 0; 
 };
 
 
@@ -47,6 +54,9 @@ class Feature_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
+   virtual void semant(class_list_type*,attr_list_type*,method_list_type*) = 0;
+   virtual Symbol get_name() = 0;
+   virtual Symbol get_type() = 0;
 
    virtual void dump_with_types(ostream&,int) = 0; 
 };
@@ -59,6 +69,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
+   virtual void semant(class_list_type*,attr_list_type*,method_list_type*) = 0;
 
    virtual void dump_with_types(ostream&,int) = 0;
 };
@@ -73,13 +84,13 @@ public:
    virtual Expression copy_Expression() = 0;
 
    Symbol type; 
-   Symbol get_type() { return type; } 
+   virtual Symbol get_type() = 0; 
    Expression set_type(Symbol s) { type = s; return this; } 
    virtual void dump_with_types(ostream&,int) = 0; 
    void dump_type(ostream&, int); 
    Expression_class() { type = (Symbol) NULL; }
+   virtual void semant(class_list_type*,attr_list_type*,method_list_type*) = 0;
 };
-
 
 // define simple phylum - Case
 typedef class Case_class *Case;
@@ -89,6 +100,8 @@ public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
    virtual void dump_with_types(ostream& ,int) = 0;
+   virtual Symbol get_expr() = 0;
+   virtual void semant(class_list_type*,attr_list_type*,method_list_type*) = 0;
 };
 
 
@@ -134,7 +147,6 @@ public:
    void dump_with_types(ostream&, int);            
 };
 
-
 // define constructor - class_
 class class__class : public Class__class {
 protected:
@@ -142,6 +154,9 @@ protected:
    Symbol parent;
    Features features;
    Symbol filename;
+   attr_list_type *attr_list;
+   method_list_type *method_list;
+   
 public:
    class__class(Symbol a1, Symbol a2, Features a3, Symbol a4) {
       name = a1;
@@ -149,11 +164,27 @@ public:
       features = a3;
       filename = a4;
    }
+   Symbol get_name() {
+       return name;
+   }
+   void fill_table(class_list_type* class_list);
+   Symbol get_parent()
+   {
+       return parent;
+   }
    Class_ copy_Class_();
    void dump(ostream& stream, int n);
-
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
    Symbol get_filename() { return filename; }
    void dump_with_types(ostream&,int);
+   attr_list_type *get_attr()
+   {
+       return attr_list;
+   }
+   method_list_type *get_methods()
+   {
+       return method_list;
+   }
 };
 
 
@@ -163,6 +194,7 @@ protected:
    Symbol name;
    Formals formals;
    Symbol return_type;
+   Symbol type;
    Expression expr;
 public:
    method_class(Symbol a1, Formals a2, Symbol a3, Expression a4) {
@@ -170,9 +202,17 @@ public:
       formals = a2;
       return_type = a3;
       expr = a4;
+      type = return_type;
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   Formals get_formals()
+   {
+       return formals;
+   };
+   void semant(class_list_type*,attr_list_type*,method_list_type*);
+   Symbol get_name() {return name;}
+   Symbol get_type() {return type;}
 
    void dump_with_types(ostream&,int);    
 };
@@ -184,14 +224,19 @@ protected:
    Symbol name;
    Symbol type_decl;
    Expression init;
+   Symbol type;
 public:
    attr_class(Symbol a1, Symbol a2, Expression a3) {
       name = a1;
       type_decl = a2;
       init = a3;
+      type = type_decl;
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_name() {return name;}
+   Symbol get_type() {return type;}
 
    void dump_with_types(ostream&,int);    
 };
@@ -209,8 +254,10 @@ public:
    }
    Formal copy_Formal();
    void dump(ostream& stream, int n);
-
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
    void dump_with_types(ostream&,int);
+   Symbol get_name() {return name;};
+   Symbol get_type() {return type_decl;}
 };
 
 
@@ -219,6 +266,7 @@ class branch_class : public Case_class {
 protected:
    Symbol name;
    Symbol type_decl;
+   Symbol type;
    Expression expr;
 public:
    branch_class(Symbol a1, Symbol a2, Expression a3) {
@@ -228,7 +276,9 @@ public:
    }
    Case copy_Case();
    void dump(ostream& stream, int n);
-
+   Symbol get_expr() {return expr->get_type();};
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type();
    void dump_with_types(ostream& ,int);
 };
 
@@ -245,6 +295,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -266,6 +318,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -285,6 +339,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -304,6 +360,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -321,6 +379,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -338,6 +398,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -353,6 +415,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -374,6 +438,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -391,6 +457,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -408,6 +476,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -425,6 +495,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -442,6 +514,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -457,6 +531,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -474,6 +550,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -491,6 +569,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -508,6 +588,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -523,6 +605,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -538,6 +622,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -553,6 +639,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -568,6 +656,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -583,6 +673,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -598,6 +690,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -611,6 +705,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
@@ -626,6 +722,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   void semant(class_list_type*,attr_list_type*,method_list_type*); 
+   Symbol get_type() {return type;};
 
    void dump_with_types(ostream&,int); 
 };
