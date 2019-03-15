@@ -7,7 +7,17 @@ use Getopt::Long;
 
 my @check_files = ( "cgen.cc", "Cgen.java" );
 my $grading_dir = "./grading";
-my $grading_cmd = "pwd && sed -i 's/csh/bash/' [1m][2y]* && echo 'first done' && sed -i 's/endif/fi/' mycoolc && echo 'second done' && sed -i 's/\(\-e\ \.\.\\\/Cgen\.java\)/[ \-e ..\\\/Cgen.java ]; /' mycoolc && pwd && ./143publicgrading PA5";
+my $grading_cmd = "pwd ; 
+	sed -i 's/csh/bash/' [1m][2y]* ;
+	sed -i 's/endif/fi/' mycoolc ;
+	sed -i 's/\(\-e\ \.\.\\\/Cgen\.java\)/[ \-e ..\\\/Cgen.java ]; /' mycoolc ;
+	# grep 'usr.*spim' [1-9]* ;
+	# echo 's/\\/usr.*spim/..\/bin\/spim/'
+       	sed -i 's/\\/usr.*spim/..\\/bin\\/spim/' [1-9]* ;
+	# grep '.*spim' [1-9]* ;
+	echo 's/Loaded: .*trap\.handler//' >> PA5-filter
+	# pwd ; 
+	./143publicgrading PA5";
 my $just_unpack;
 my $just_run;
 my $verbose;
