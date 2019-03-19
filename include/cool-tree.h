@@ -8,10 +8,20 @@
 //
 //////////////////////////////////////////////////////////
 
-
+#include <vector>
 #include "tree.h"
 #include "cool-tree.handcode.h"
+#include "symtab.h"
 
+struct EnvElement{
+    Symbol self;
+    Symbol name;
+    int offset;
+    EnvElement(Symbol _self,Symbol _name, int _offset) :
+      self(_self),name(_name),offset(_offset) {};
+};
+// vector for save offsets
+typedef std::vector<EnvElement>* Environment;
 
 // define the class for phylum
 // define simple phylum - Program
@@ -48,6 +58,7 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual void dump_with_types(ostream&,int) = 0;
+   virtual int calc_temp() = 0;
 };
 
 
@@ -77,13 +88,13 @@ public:
       type = s;
       return this;
    }
-   virtual void code(ostream&) = 0;
+   virtual void code(ostream&, Symbol, Environment, Environment) = 0;
    virtual void dump_with_types(ostream&,int) = 0;
    void dump_type(ostream&, int);
    Expression_class() {
       type = (Symbol) NULL;
    }
-
+   virtual int calc_temp() = 0;
 };
 
 
@@ -95,6 +106,7 @@ public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
    virtual void dump_with_types(ostream& ,int) = 0;
+   virtual int calc_temp() = 0;
 };
 
 
@@ -185,8 +197,10 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
+   Symbol get_name() {return name;};
 };
 
 
@@ -204,8 +218,10 @@ public:
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
+   Symbol get_name() {return name;};
 };
 
 
@@ -222,6 +238,7 @@ public:
    Formal copy_Formal();
    void dump(ostream& stream, int n);
    void dump_with_types(ostream&,int);
+   Symbol get_name() {return name;}
 };
 
 
@@ -240,6 +257,7 @@ public:
    Case copy_Case();
    void dump(ostream& stream, int n);
    void dump_with_types(ostream& ,int);
+   int calc_temp();
 };
 
 
@@ -255,8 +273,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -276,8 +295,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -295,8 +315,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -314,8 +335,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -331,8 +353,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -348,8 +371,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -363,8 +387,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -384,8 +409,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -401,8 +427,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -418,8 +445,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -435,8 +463,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -452,8 +481,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -467,8 +497,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -484,8 +515,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -501,8 +533,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -518,8 +551,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -533,8 +567,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -548,8 +583,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -563,8 +599,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -578,8 +615,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -593,8 +631,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -608,8 +647,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -621,8 +661,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
@@ -636,8 +677,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
-   void code(ostream&);
+   void code(ostream&, Symbol, Environment, Environment);
    void dump_with_types(ostream&,int);
+   int calc_temp();
 };
 
 
