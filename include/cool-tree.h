@@ -13,12 +13,17 @@
 #include "cool-tree.handcode.h"
 #include "symtab.h"
 
+enum class Type {
+    METHOD, OBJECT
+}; 
+
 struct EnvElement{
     Symbol self;
     Symbol name;
     int offset;
-    EnvElement(Symbol _self,Symbol _name, int _offset) :
-      self(_self),name(_name),offset(_offset) {};
+    Type  type;
+    EnvElement(Symbol _self,Symbol _name, int _offset, Type _type) :
+      self(_self),name(_name),offset(_offset),type(_type) {};
 };
 // vector for save offsets
 typedef std::vector<EnvElement>* Environment;
@@ -107,6 +112,9 @@ public:
    virtual Case copy_Case() = 0;
    virtual void dump_with_types(ostream& ,int) = 0;
    virtual int calc_temp() = 0;
+   virtual Symbol get_type_decl() = 0;
+   virtual Symbol get_name() = 0;
+   virtual Expression get_expr() = 0;
 };
 
 
@@ -201,6 +209,7 @@ public:
    void dump_with_types(ostream&,int);
    int calc_temp();
    Symbol get_name() {return name;};
+   int formal_size() {return formals->len();};
 };
 
 
@@ -258,6 +267,10 @@ public:
    void dump(ostream& stream, int n);
    void dump_with_types(ostream& ,int);
    int calc_temp();
+   Symbol get_type_decl() {return type_decl;}
+   virtual Symbol get_name() { return name; }
+   virtual Expression get_expr() { return expr; }
+
 };
 
 

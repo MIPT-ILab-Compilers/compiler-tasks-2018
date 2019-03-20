@@ -17,11 +17,12 @@ typedef CgenClassTable *CgenClassTableP;
 class CgenNode;
 typedef CgenNode *CgenNodeP;
 
+CgenNodeP curr_node = nullptr;
 
 class CgenClassTable : public SymbolTable<Symbol,CgenNode> {
 private:
    List<CgenNode> *nds;
-   ostream& str;
+   ostream& s;
    int stringclasstag = -1;
    int intclasstag = -1;
    int boolclasstag = -1;
@@ -80,7 +81,6 @@ public:
    List<CgenNode> *get_children() { return children; }
    void set_parentnd(CgenNodeP p);
    CgenNodeP get_parentnd() { return parentnd; }
-    // FIXME - check it
    int basic() {
        return (basic_status == Basic);
    }
@@ -100,7 +100,7 @@ public:
    void fill_table() {
       int attr_offset = FRAME_OFFSET;
       int meth_offset = 0;
-      std::cout << get_name() << "\n";
+      // std::cout << get_name() << "\n";
       if (parentnd)
       {
         //std::cerr << "call for " << get_name() << "\n";
@@ -132,10 +132,10 @@ public:
                                  methodTable->begin(),
                                  methodTable->end(),
                                  pred);
-              EnvElement new_elem = EnvElement(get_name(), m->get_name(), meth_offset);
+              EnvElement new_elem = EnvElement(get_name(), m->get_name(), meth_offset, Type::METHOD);
               if (prev == methodTable->end())
               {
-                  std::cout << " for " << m->get_name() << "\n";
+                  //std::cout << " for " << m->get_name() << "\n";
                   methodTable->push_back(new_elem);
                   ++meth_offset;
               }
@@ -147,7 +147,7 @@ public:
           }
           if (a)
           {
-              attrTable->push_back(EnvElement(get_name(), a->get_name(), attr_offset));
+              attrTable->push_back(EnvElement(get_name(), a->get_name(), attr_offset, Type::OBJECT));
               ++attr_offset;
 
           }

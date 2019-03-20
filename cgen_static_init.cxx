@@ -52,238 +52,243 @@ static void initialize_constants(void) {
 //////////////////////////////////////////////////////////////////////////////
 
 static void emit_load(const char *dest_reg, const int offset, const char *source_reg, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << LW << dest_reg << " " << offset * WORD_SIZE << "(" << source_reg << ")"
         << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_store(const char *source_reg, const int offset, const char *dest_reg, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << SW << source_reg << " " << offset * WORD_SIZE << "(" << dest_reg << ")"
         << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_load_imm(const char *dest_reg, const int val, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << LI << dest_reg << " " << val << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_load_address(const char *dest_reg, const char *address, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << LA << dest_reg << " " << address << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_partial_load_address(const char *dest_reg, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << LA << dest_reg << " ";
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_load_bool(const char *dest, const BoolConst& b, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_partial_load_address(dest, s);
     b.code_ref(s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_load_string(const char *dest, StringEntry *str, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_partial_load_address(dest, s);
     str->code_ref(s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_load_int(char *dest, IntEntry *i, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_partial_load_address(dest, s);
     i->code_ref(s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_move(char *dest_reg, char *source_reg, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << MOVE << dest_reg << " " << source_reg << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_neg(char *dest, char *src1, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << NEG << dest << " " << src1 << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_add(char *dest, char *src1, char *src2, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << ADD << dest << " " << src1 << " " << src2 << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_addu(char *dest, char *src1, char *src2, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << ADDU << dest << " " << src1 << " " << src2 << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_addiu(char *dest, char *src1, int imm, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << ADDIU << dest << " " << src1 << " " << imm << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_div(char *dest, char *src1, char *src2, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << DIV << dest << " " << src1 << " " << src2 << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_mul(char *dest, char *src1, char *src2, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << MUL << dest << " " << src1 << " " << src2 << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
+}
+
+static void emit_xor(char *dest_reg, char *src0, char *src1, ostream &s)
+{
+	s << XOR << dest_reg << " " << src0 << " " << src1 << endl;
 }
 
 static void emit_sub(char *dest, char *src1, char *src2, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << SUB << dest << " " << src1 << " " << src2 << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_sll(char *dest, char *src1, int num, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << SLL << dest << " " << src1 << " " << num << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_jalr(char *dest, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << JALR << dest << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_jal(const char *address, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << JAL << address << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_return(ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << RET << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_gc_assign(ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << JAL << "_GenGC_Assign" << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_disptable_ref(Symbol sym, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << sym << DISPTAB_SUFFIX;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_init_ref(Symbol sym, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << sym << CLASSINIT_SUFFIX;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_label_ref(int l, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << "label" << l;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_protobj_ref(Symbol sym, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << sym << PROTOBJ_SUFFIX;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_method_ref(Symbol classname, Symbol methodname, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << classname << METHOD_SEP << methodname;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_label_def(int l, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_label_ref(l, s);
     s << ":" << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_beqz(char *source, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BEQZ << source << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_beq(char *src1, char *src2, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BEQ << src1 << " " << src2 << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_bne(char *src1, char *src2, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BNE << src1 << " " << src2 << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_bleq(char *src1, char *src2, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BLEQ << src1 << " " << src2 << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_blt(char *src1, char *src2, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BLT << src1 << " " << src2 << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_blti(char *src1, int imm, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BLT << src1 << " " << imm << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_bgti(char *src1, int imm, int label, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BGT << src1 << " " << imm << " ";
     emit_label_ref(label, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_branch(int l, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     s << BRANCH;
     emit_label_ref(l, s);
     s << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 //
@@ -291,10 +296,40 @@ static void emit_branch(int l, ostream& s) {
 //
 
 static void emit_push(char *reg, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_store(reg, 0, SP, s);
     emit_addiu(SP, SP, -4, s);
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
+}
+
+static void emit_pop( char *reg, ostream& s)
+{
+    INFO_IN_AS_EMIT;
+	emit_addiu(SP, SP, 4, s);
+	emit_load(reg, 0, SP, s);
+    INFO_OUT_AS_EMIT;
+}
+
+static void emit_new( Symbol name, ostream &s)
+{
+    INFO_IN_AS_EMIT;
+	emit_partial_load_address( ACC, s);
+    emit_protobj_ref( name, s);
+    s << "\n";
+	s << JAL;
+    emit_method_ref( Object, copy, s);
+    s << "\n";
+    INFO_IN_AS_EMIT;
+}
+
+static void emit_abort( int label, int lineno, char *dest_addr, ostream &s)
+{
+	emit_bne(ACC, ZERO, label, s);
+	emit_load_string(ACC,
+         stringtable.lookup_string(
+                curr_node->filename->get_string()), s);
+	emit_load_imm(T1, lineno, s);
+	emit_jal(dest_addr, s);
 }
 
 // Push entry function header
@@ -339,7 +374,7 @@ static void emit_push_header_class(ostream& s, int header_size)
 static void emit_pop_header(ostream& s, int size)
 {
     // restore self
-    emit_move( ACC, SELF, s);
+    emit_move(ACC, SELF, s);
     // restore previous fp
     emit_load(FP, 3, SP, s);
     // restore previous SELF
@@ -366,9 +401,9 @@ static void emit_pop_header_class(ostream& s, int header_size)
 //
 
 static void emit_fetch_int(char *dest, char *source, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_load(dest, DEFAULT_OBJFIELDS, source, s);
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 //
@@ -377,29 +412,29 @@ static void emit_fetch_int(char *dest, char *source, ostream& s) {
 //
 
 static void emit_store_int(char *source, char *dest, ostream& s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_store(source, DEFAULT_OBJFIELDS, dest, s);
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 /// Begin here
 
 static void emit_test_collector(ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     emit_push(ACC, s);
     emit_move(ACC, SP, s); // stack end
     emit_move(A1, ZERO, s); // allocate nothing
     s << JAL << gc_collect_names[cgen_Memmgr] << endl;
     emit_addiu(SP, SP, 4, s);
     emit_load(ACC, 0, SP, s);
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static void emit_gc_check(char *source, ostream &s) {
-    INFO_IN_AS;
+    INFO_IN_AS_EMIT;
     if (source != (char*) A1) emit_move(A1, source, s);
     s << JAL << "_gc_check" << endl;
-    INFO_OUT_AS;
+    INFO_OUT_AS_EMIT;
 }
 
 static int create_label()
@@ -407,4 +442,15 @@ static int create_label()
     static int label = 0;
     return label++;
 }
+
+static int temp_offset = 0;
+static void init_alloc_temp()
+{
+	temp_offset = 0;
+}
+static int alloc_temp()
+{
+	return temp_offset++;
+}
+
 

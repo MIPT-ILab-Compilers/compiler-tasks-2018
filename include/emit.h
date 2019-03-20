@@ -25,6 +25,13 @@
 #define BOOLTAG              "_bool_tag"
 #define STRINGTAG            "_string_tag"
 #define HEAP_START           "heap_start"
+#define CASEABORT            "_case_abort"
+#define CASEABORT2           "_case_abort2"
+#define EQUALITY_TEST        "equality_test"
+#define DISPATHABORT         "_dispatch_abort"
+#define GENGC_ASSIGN         "_GenGC_Assign"
+
+
 
 // Naming conventions
 #define DISPTAB_SUFFIX       "_dispTab"
@@ -70,7 +77,9 @@
 #define SELF "$s0"		// Ptr to self (callee saves) 
 #define T1   "$t1"		// Temporary 1 
 #define T2   "$t2"		// Temporary 2 
-#define T3   "$t3"		// Temporary 3 
+#define T3   "$t0"		// Temporary 3 
+#define T4   "$s1"		// Temporary 4 
+
 #define SP   "$sp"		// Stack pointer 
 #define FP   "$fp"		// Frame pointer 
 #define RA   "$ra"		// Return address 
@@ -93,6 +102,7 @@
 #define ADDI  "\taddi\t"
 #define ADDU  "\taddu\t"
 #define ADDIU "\taddiu\t"
+#define XOR   "\txor\t"
 #define DIV   "\tdiv\t"
 #define MUL   "\tmul\t"
 #define SUB   "\tsub\t"

@@ -13,48 +13,48 @@
 
 void CgenClassTable::code_global_data() {
     INFO_IN;
-    str << "# coding global data" << endl;
+    s << "# coding global data" << endl;
     Symbol main = idtable.lookup_string(MAINNAME);
     Symbol string = idtable.lookup_string(STRINGNAME);
     Symbol integer = idtable.lookup_string(INTNAME);
     Symbol boolc = idtable.lookup_string(BOOLNAME);
 
-    str << "\t.data\n" << ALIGN;
+    s << "\t.data\n" << ALIGN;
     //
     // The following global names must be defined first.
     //
-    str << GLOBAL << CLASSNAMETAB << endl;
-    str << GLOBAL;
-    emit_protobj_ref(main, str);
-    str << endl;
-    str << GLOBAL;
-    emit_protobj_ref(integer, str);
-    str << endl;
-    str << GLOBAL;
-    emit_protobj_ref(string, str);
-    str << endl;
-    str << GLOBAL;
-    falsebool.code_ref(str);
-    str << endl;
-    str << GLOBAL;
-    truebool.code_ref(str);
-    str << endl;
-    str << GLOBAL << INTTAG << endl;
-    str << GLOBAL << BOOLTAG << endl;
-    str << GLOBAL << STRINGTAG << endl;
+    s << GLOBAL << CLASSNAMETAB << endl;
+    s << GLOBAL;
+    emit_protobj_ref(main, s);
+    s << endl;
+    s << GLOBAL;
+    emit_protobj_ref(integer, s);
+    s << endl;
+    s << GLOBAL;
+    emit_protobj_ref(string, s);
+    s << endl;
+    s << GLOBAL;
+    falsebool.code_ref(s);
+    s << endl;
+    s << GLOBAL;
+    truebool.code_ref(s);
+    s << endl;
+    s << GLOBAL << INTTAG << endl;
+    s << GLOBAL << BOOLTAG << endl;
+    s << GLOBAL << STRINGTAG << endl;
 
     //
     // We also need to know the tag of the Int, String, and Bool classes
     // during code generation.
     //
     assert(intclasstag != -1);
-    str << INTTAG << LABEL
+    s << INTTAG << LABEL
         << WORD << intclasstag << endl;
     assert(boolclasstag != -1);
-    str << BOOLTAG << LABEL
+    s << BOOLTAG << LABEL
         << WORD << boolclasstag << endl;
     assert(stringclasstag != -1);
-    str << STRINGTAG << LABEL
+    s << STRINGTAG << LABEL
         << WORD << stringclasstag << endl;
     INFO_OUT;
 }
@@ -69,41 +69,43 @@ void CgenClassTable::code_global_data() {
 
 void CgenClassTable::code_global_text() {
     INFO_IN;
-    str << "# coding global text" << endl;
-    str << GLOBAL << HEAP_START << endl
+    s << "# coding global text" << endl;
+    s << GLOBAL << HEAP_START << endl
         << HEAP_START << LABEL
         << WORD << 0 << endl
         << "\t.text" << endl
         << GLOBAL;
-    emit_init_ref(idtable.add_string("Main"), str);
-    str << endl << GLOBAL;
-    emit_init_ref(idtable.add_string("Int"), str);
-    str << endl << GLOBAL;
-    emit_init_ref(idtable.add_string("String"), str);
-    str << endl << GLOBAL;
-    emit_init_ref(idtable.add_string("Bool"), str);
-    str << endl << GLOBAL;
-    emit_method_ref(idtable.add_string("Main"), idtable.add_string("main"), str);
-    str << endl;
+    emit_init_ref(idtable.add_string("Main"), s);
+    s << endl << GLOBAL;
+    emit_init_ref(idtable.add_string("Int"), s);
+    s << endl << GLOBAL;
+    emit_init_ref(idtable.add_string("String"), s);
+    s << endl << GLOBAL;
+    emit_init_ref(idtable.add_string("Bool"), s);
+    s << endl << GLOBAL;
+    emit_method_ref(idtable.add_string("Main"), idtable.add_string("main"), s);
+    s << endl;
     INFO_OUT;
 }
 
 void CgenClassTable::code_initCode() {
-    str << "  # Initialization code \n";
+    s << "  # Initialization code \n";
     for (List<CgenNode> *l = nds; l; l = l->tl())
     {
         CgenNode* node = l->hd();
+        curr_node = node;
+        init_alloc_temp(); 
         int tmpCurr = node->calc_temp();
-        node->code_ref(str);
-        str << CLASSINIT_SUFFIX << LABEL;
-        node->emit_init(str, tmpCurr);
+        node->code_ref(s);
+        s << CLASSINIT_SUFFIX << LABEL;
+        node->emit_init(s, tmpCurr);
     };
 }
 
 void CgenClassTable::code_bools(int boolclasstag) {
     INFO_IN;
-    falsebool.code_def(str, boolclasstag);
-    truebool.code_def(str, boolclasstag);
+    falsebool.code_def(s, boolclasstag);
+    truebool.code_def(s, boolclasstag);
     INFO_OUT;
 }
 
@@ -112,16 +114,16 @@ void CgenClassTable::code_select_gc() {
     //
     // Generate GC choice constants (pointers to GC functions)
     //
-    str << "# choosing GC" << endl;
-    str << GLOBAL << "_MemMgr_INITIALIZER" << endl;
-    str << "_MemMgr_INITIALIZER:" << endl;
-    str << WORD << gc_init_names[cgen_Memmgr] << endl;
-    str << GLOBAL << "_MemMgr_COLLECTOR" << endl;
-    str << "_MemMgr_COLLECTOR:" << endl;
-    str << WORD << gc_collect_names[cgen_Memmgr] << endl;
-    str << GLOBAL << "_MemMgr_TEST" << endl;
-    str << "_MemMgr_TEST:" << endl;
-    str << WORD << (cgen_Memmgr_Test == GC_TEST) << endl;
+    s << "# choosing GC" << endl;
+    s << GLOBAL << "_MemMgr_INITIALIZER" << endl;
+    s << "_MemMgr_INITIALIZER:" << endl;
+    s << WORD << gc_init_names[cgen_Memmgr] << endl;
+    s << GLOBAL << "_MemMgr_COLLECTOR" << endl;
+    s << "_MemMgr_COLLECTOR:" << endl;
+    s << WORD << gc_collect_names[cgen_Memmgr] << endl;
+    s << GLOBAL << "_MemMgr_TEST" << endl;
+    s << "_MemMgr_TEST:" << endl;
+    s << WORD << (cgen_Memmgr_Test == GC_TEST) << endl;
     INFO_OUT;
 }
 
@@ -140,23 +142,24 @@ void CgenClassTable::code_select_gc() {
 //********************************************************
 
 void CgenClassTable::code_constants() {
-    INFO_IN;
+    INFO_IN_AS;
     //
     // Add constants that are required by the code generator.
     //
-    str << "# coding constants" << endl;
+    //str << "# coding constants" << endl;
     stringtable.add_string("");
     inttable.add_string("0");
 
-    stringtable.code_string_table(str, stringclasstag);
-    inttable.code_string_table(str, intclasstag);
+    stringtable.code_string_table(s, stringclasstag);
+    inttable.code_string_table(s, intclasstag);
     code_bools(boolclasstag);
-    INFO_OUT;
+    INFO_OUT_AS;
 }
 
 void CgenClassTable::code_classNameTab() {
-    str << "# coding class name Table. \n";
-    str << CLASSNAMETAB << LABEL;    
+    INFO_IN_AS;
+    //str << "# coding class name Table. \n";
+    s << CLASSNAMETAB << LABEL;    
     for (int i = 0; i < currclasstag; ++i)
     {
         // Looking for i id-s
@@ -171,54 +174,62 @@ void CgenClassTable::code_classNameTab() {
         // std::cout << " found " << l->hd()->get_name()->get_string() << " \n";
         // Looking for string
         StringEntry* se = stringtable.lookup_string(l->hd()->get_name()->get_string());
-        str << WORD; 
-        se->code_ref(str);
-        str << "\n";        
+        s << WORD; 
+        se->code_ref(s);
+        s << "\n";        
     }
+    INFO_OUT_AS;
 }
 
 void CgenClassTable::code_classObjTab() {
-    str << "# coding class object Table. \n";
-    str << CLASSOBJTAB << LABEL;
+    INFO_IN_AS;
+    //str << "# coding class object Table. \n";
+    s << CLASSOBJTAB << LABEL;
     for (List<CgenNode> *l = nds; l; l = l->tl())
     {
         CgenNode* tmp = l->hd();
-        str << WORD;
-        tmp->code_ref(str);
-        str << PROTOBJ_SUFFIX <<"\n";
+        s << WORD;
+        tmp->code_ref(s);
+        s << PROTOBJ_SUFFIX <<"\n";
         
-        str << WORD;
-        tmp->code_ref(str);
-        str << CLASSINIT_SUFFIX <<"\n";
+        s << WORD;
+        tmp->code_ref(s);
+        s << CLASSINIT_SUFFIX <<"\n";
     };
+    INFO_OUT_AS;
 }
 
 
 void CgenClassTable::code_protObjs() {
-    str << "# coding prototype Objects. \n";
+    INFO_IN_AS;
+    //str << "# coding prototype Objects. \n";
     for (List<CgenNode> *l = nds; l; l = l->tl())
     {
         CgenNode* tmp = l->hd();
-        tmp->code_prot(str);
+        tmp->code_prot(s);
     };
+    INFO_OUT_AS;
 }
 
 void CgenClassTable::code_dispTabs() {
-    str << "# coding disp Tables. \n";
+    INFO_IN_AS;
+    //str << "# coding disp Tables. \n";
     for (List<CgenNode> *l = nds; l; l = l->tl())
     {
         CgenNode* tmp = l->hd();
-        tmp->code_ref(str);
-        str << DISPTAB_SUFFIX << LABEL;
-        tmp->code_disp(str);
+        tmp->code_ref(s);
+        s << DISPTAB_SUFFIX << LABEL;
+        tmp->code_disp(s);
     };
+    INFO_OUT_AS;
 }
 
 void CgenClassTable::code_methods() {
-    INFO_IN
+    INFO_IN_AS
     for (List<CgenNode> *l = nds; l; l = l->tl())
     {
         CgenNode* tmp = l->hd();
+        curr_node = tmp;
         if (tmp->basic())
         {
             continue;
@@ -231,28 +242,30 @@ void CgenClassTable::code_methods() {
             method_class * m = dynamic_cast<method_class*>(f);
             if (m)
             {
-                int header_size = m->calc_temp();
-                tmp->code_ref(str);
-                str << METHOD_SEP;
-                str << m->name << LABEL;
+                int header_size = 
+                    FRAME_OFFSET + m->calc_temp() ; // + m->formal_size(); 
+                tmp->code_ref(s);
+                s << METHOD_SEP;
+                s << m->name << LABEL;
 
-                emit_push_header(str, header_size);
+                emit_push_header(s, header_size);
 
-                m->code(str,
+                m->code(s,
                         tmp->get_name(),
                         tmp->get_attr_table(),
                         tmp->get_method_table());
 
-                emit_pop_header(str, header_size);
+                emit_pop_header(s, header_size + 
+                    m->formal_size());
 
-                emit_return(str);
+                emit_return(s);
             }
         }
     }
-    INFO_OUT
+    INFO_OUT_AS
 }
 
-CgenClassTable::CgenClassTable(Classes classes, ostream& s) : nds(NULL), str(s) {
+CgenClassTable::CgenClassTable(Classes classes, ostream& str) : nds(NULL), s(str) {
     INFO_IN;
     enterscope();
     if (cgen_debug) cout << "Building CgenClassTable" << endl;
@@ -445,8 +458,6 @@ void CgenClassTable::build_inheritance_tree() {
     {
         l->hd()->fill_table();
     }
-   
-
     INFO_OUT;
 }
 
@@ -527,12 +538,13 @@ void CgenNode::set_parentnd(CgenNodeP p) {
 
 void CgenNode::code_disp(ostream& s)
 {
+    INFO_IN_AS;
     for(unsigned i = 0; i < methodTable->size(); ++i)
     {
         s << WORD << methodTable->at(i).self << METHOD_SEP << 
             methodTable->at(i).name << "\n";
     }
-
+    INFO_OUT_AS;
 };
 
 void CgenNode::code_ref(ostream& s)
@@ -542,6 +554,7 @@ void CgenNode::code_ref(ostream& s)
 
 int CgenNode::get_attr_num()
 {
+    INFO_IN;
     int attrnum = 0;
     if (parentnd != NULL && get_name() != Object)
         attrnum = parentnd->get_attr_num();
@@ -554,6 +567,7 @@ int CgenNode::get_attr_num()
         attr_class * a = dynamic_cast<attr_class*>(f);
         if (a) attrnum++;
     }
+    INFO_OUT;
     return attrnum;
 };
 
@@ -588,7 +602,7 @@ void CgenNode::code_attr_prot(ostream& s)
             } else
             {
                 s << "0";
-                s << " # " << a->type_decl;
+                //s << " # " << a->type_decl;
             }
             s << endl;
         }
@@ -598,6 +612,7 @@ void CgenNode::code_attr_prot(ostream& s)
 
 int CgenNode::calc_temp()
 {
+    INFO_IN;
     // Calculate temp size for initialization of object
     int temp_size = 0;
     for(int i = features->first();
@@ -613,12 +628,14 @@ int CgenNode::calc_temp()
             temp_size = std::max(temp_size, attr->calc_temp());
         }
     }
+    INFO_OUT;
     return temp_size;
 }
 
 void CgenNode::emit_init(ostream& s, int header_size)
 {
-    emit_push_header(s, header_size);
+    INFO_IN_AS;
+    emit_push_header_class(s, header_size);
     if (parentnd != NULL && get_name() != Object)
     {
         std::string str = parentnd->get_name()->get_string();
@@ -640,8 +657,9 @@ void CgenNode::emit_init(ostream& s, int header_size)
                        get_method_table());
 		}
 	} 
-    emit_pop_header(s, header_size);
+    emit_pop_header_class(s, header_size);
     emit_return(s);
+    INFO_OUT_AS;
 }
 
 void CgenNode::code_prot(ostream& s)
