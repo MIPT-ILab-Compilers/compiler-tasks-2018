@@ -81,7 +81,7 @@ dotest:	cgen example.cl
 #	-ln -s ${CLASSDIR}/include/PA${ASSN}/$@ $@
 
 clean :
-	-rm -f ${OUTPUT} *.s core ${OBJS} cgen *~ *.a *.o
+	-rm -f ${OUTPUT} *.s core ${OBJS} cgen *~ *.a *.o *.d
 
 clean-compile:
 	@-rm -f core ${OBJS} ${LSRC}

@@ -132,15 +132,17 @@ public:
                                  methodTable->begin(),
                                  methodTable->end(),
                                  pred);
-              EnvElement new_elem = EnvElement(get_name(), m->get_name(), meth_offset, Type::METHOD);
               if (prev == methodTable->end())
               {
+                  EnvElement new_elem = EnvElement(get_name(), m->get_name(), meth_offset, Type::METHOD);
                   //std::cout << " for " << m->get_name() << "\n";
                   methodTable->push_back(new_elem);
                   ++meth_offset;
               }
               else
               {
+                  auto m_offset = prev->offset;
+                  EnvElement new_elem = EnvElement(get_name(), m->get_name(), m_offset, Type::METHOD);
                   std::replace_if(methodTable->begin(), methodTable->end(),
                             pred, new_elem);
               }

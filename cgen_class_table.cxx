@@ -185,17 +185,22 @@ void CgenClassTable::code_classObjTab() {
     INFO_IN_AS;
     //str << "# coding class object Table. \n";
     s << CLASSOBJTAB << LABEL;
-    for (List<CgenNode> *l = nds; l; l = l->tl())
+    for(int i = 0; i < currclasstag; ++i)
     {
-        CgenNode* tmp = l->hd();
-        s << WORD;
-        tmp->code_ref(s);
-        s << PROTOBJ_SUFFIX <<"\n";
-        
-        s << WORD;
-        tmp->code_ref(s);
-        s << CLASSINIT_SUFFIX <<"\n";
-    };
+        for (List<CgenNode> *l = nds; l; l = l->tl()) {
+            CgenNode* tmp = l->hd();
+            if (tmp->get_id() == i) {
+                s << WORD;
+                tmp->code_ref(s);
+                s << PROTOBJ_SUFFIX << "\n";
+
+                s << WORD;
+                tmp->code_ref(s);
+                s << CLASSINIT_SUFFIX << "\n";
+
+            }
+        }
+    }
     INFO_OUT_AS;
 }
 
@@ -234,6 +239,7 @@ void CgenClassTable::code_methods() {
         {
             continue;
         }
+
         for(int i = tmp->features->first();
                 tmp->features->more(i);
                 i = tmp->features->next(i))
@@ -242,8 +248,15 @@ void CgenClassTable::code_methods() {
             method_class * m = dynamic_cast<method_class*>(f);
             if (m)
             {
+#ifdef DEBUG_TEMPS
+                debug_temps = true;
+#endif
+                
+#ifdef DEBUG_AS_NAMES
+                function_name = m->get_name()->get_string();
+#endif
                 int header_size = 
-                    FRAME_OFFSET + m->calc_temp() ; // + m->formal_size(); 
+                    m->calc_temp() ; // FRAME_OFFSET + + m->formal_size(); 
                 tmp->code_ref(s);
                 s << METHOD_SEP;
                 s << m->name << LABEL;
@@ -255,8 +268,8 @@ void CgenClassTable::code_methods() {
                         tmp->get_attr_table(),
                         tmp->get_method_table());
 
-                emit_pop_header(s, header_size + 
-                    m->formal_size());
+                emit_pop_header(s,  header_size + m->formal_size());// + FRAME_OFFSET +
+//                    );
 
                 emit_return(s);
             }
@@ -598,7 +611,7 @@ void CgenNode::code_attr_prot(ostream& s)
 
             } else if (a->type_decl == Bool)
             {
-                s << "0" << "   # Bool default";
+                s << "bool_const0" << "   # Bool default";
             } else
             {
                 s << "0";
@@ -635,7 +648,7 @@ int CgenNode::calc_temp()
 void CgenNode::emit_init(ostream& s, int header_size)
 {
     INFO_IN_AS;
-    emit_push_header_class(s, header_size);
+    emit_push_header(s, header_size);
     if (parentnd != NULL && get_name() != Object)
     {
         std::string str = parentnd->get_name()->get_string();
@@ -657,7 +670,9 @@ void CgenNode::emit_init(ostream& s, int header_size)
                        get_method_table());
 		}
 	} 
-    emit_pop_header_class(s, header_size);
+    // restore self
+    emit_move(ACC, SELF, s);
+    emit_pop_header(s, header_size);
     emit_return(s);
     INFO_OUT_AS;
 }

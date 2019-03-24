@@ -736,7 +736,7 @@ Object.type_name:
 
   .globl  IO.out_string
 IO.out_string:
-  addiu  $sp $sp -4
+  addiu  $sp $sp -4 # IO.out_strig
   sw  $a0 4($sp)  # save self
   lw  $a0 8($sp)  # get arg
   addiu  $a0 $a0 str_field  # Adjust to beginning of str
