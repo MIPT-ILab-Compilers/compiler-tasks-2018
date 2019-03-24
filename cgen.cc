@@ -371,14 +371,14 @@ void method_class::code(ostream& s, Symbol self_class, Environment var, Environm
         formal_class* f = dynamic_cast<formal_class*> (formals->nth(i));
         if (f) {
             EnvElement new_elem = EnvElement(self, f->name, --cnt, Type::METHOD);
-            var->push_back(new_elem);
+            curr_var->push_back(new_elem);
             s << " # formal " << f->name->get_string() << endl;
         } else {
             s << " # unknown formal" << endl;
         }
     }
-    expr->code(s, self_class, var, met);
-    var = curr_var;
+    expr->code(s, self_class, curr_var, met);
+//    var; = curr_var;
 
     INFO_OUT
 }
@@ -457,10 +457,10 @@ void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Enviro
     }
 
     for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
-        actual->nth(i)->code(s, self_class, var, met);
+        actual->nth(i)->code(s, self_class, var, tmp_met);
         emit_push(ACC, s);
     }
-    expr->code(s, self_class, var, met);
+    expr->code(s, self_class, var, tmp_met);
 
     int jump_label = create_label();
     emit_bne(ACC, ZERO, jump_label, s);
@@ -470,13 +470,13 @@ void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Enviro
     emit_jal("_dispatch_abort", s);
 
     CgenNodeP node = codegen_classtable->lookup(type);
-    met = node->get_method_table();
+    tmp_met = node->get_method_table();
     auto pred = [ = ](EnvElement a){return a.name == name;};
-    auto off = std::find_if(met->rbegin(), met->rend(), pred);
+    auto off = std::find_if(tmp_met->rbegin(), tmp_met->rend(), pred);
 //    int offset = (off->offset);
 
     int offset = 1;
-    if(off != met->rend())
+    if(off != tmp_met->rend())
     {
 //        for(auto it = met->begin(); it != met->end(); ++it)
 //        {
@@ -496,7 +496,7 @@ void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Enviro
     emit_load(T1, DISPTABLE_OFFSET, ACC, s);
     emit_load(T1, offset, T1, s);
     emit_jalr(T1, s);
-    met = tmp_met;
+//    met = tmp_met;
     expr_is_const = true;
     INFO_OUT_AS;
 }
@@ -555,11 +555,7 @@ void typcase_class::code(ostream &s, Symbol self_class, Environment var, Environ
     for (int i(cases->first()); cases->more(i); i = cases->next(i)) {
         Symbol type = cases->nth(i)->get_type_decl();
         CgenNodeP class_node = codegen_classtable->lookup(type);
-        int max_class_tag = 0;
-        for (List<CgenNode> *leg = class_node->get_children(); leg; leg = leg->tl()) {
-            max_class_tag = std::max(max_class_tag, leg->hd()->get_id());
-        }
-        push_vec(class_node->get_id(), max_class_tag, i);
+        push_vec(class_node->get_id(), class_node->get_max_id(), i);
     }
 
     auto lmbd = [](auto a, auto b) {
@@ -583,9 +579,9 @@ void typcase_class::code(ostream &s, Symbol self_class, Environment var, Environ
 
         Case br = cases->nth(c);
         auto tmp_var = new std::vector<EnvElement>(*var);
-        var->push_back(EnvElement(self_class, br->get_name(), temp, Type::METHOD));
-        br->get_expr()->code(s, self_class, var, met);
-        var = tmp_var;
+        tmp_var->push_back(EnvElement(self_class, br->get_name(), temp, Type::METHOD));
+        br->get_expr()->code(s, self_class, tmp_var, met);
+//        var = tmp_var;
         emit_branch(last_label, s);
     }
 
@@ -627,13 +623,13 @@ void let_class::code(ostream &s, Symbol self_class, Environment var, Environment
         }
     }
     if (!filled) {
-        init->code(s, self_class, var, met);
+        init->code(s, self_class, curr_var, met);
     }
     EnvElement new_elem = EnvElement(curr_node->get_name(), identifier, offset, Type::METHOD);
-    var->push_back(new_elem);
+    curr_var->push_back(new_elem);
     emit_store(ACC, offset, FP, s);
-    body->code(s, self_class, var, met);
-    var = curr_var;
+    body->code(s, self_class, curr_var, met);
+//    var = curr_var;
     INFO_OUT_AS;
 }
 
@@ -710,6 +706,7 @@ void neg_class::code(ostream &s, Symbol self_class, Environment var, Environment
         emit_fetch_int(T3, ACC, s);
     }
     emit_neg(T3, T3, s);
+    emit_store_int( T3, ACC, s);
     INFO_OUT_AS;
 }
 
@@ -859,6 +856,15 @@ void object_class::code(ostream &s, Symbol self_class, Environment var, Environm
     if (name != self && name != self_class) {
         auto pred = [ = ](EnvElement a){return a.name == name;};
         auto off_var = std::find_if(var->rbegin(), var->rend(), pred);
+        
+        for(auto it = var->begin(); it != var->end(); ++it)
+        {
+            s << "#  ==> " << it->name->get_string() << " offset : "
+                    << it->offset << " " << it->self->get_string() << " type:" <<
+                    (it->type == Type::OBJECT ? "O" : "M") << " \n";
+        }
+        s << "#  -> curr off " << (off_var->offset)*WORD_SIZE << "\n";
+        
         if (off_var->type == Type::OBJECT) {
             s << "# for " << name << " self \n";
             emit_load(ACC, off_var->offset, SELF, s);

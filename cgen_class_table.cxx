@@ -255,8 +255,7 @@ void CgenClassTable::code_methods() {
 #ifdef DEBUG_AS_NAMES
                 function_name = m->get_name()->get_string();
 #endif
-                int header_size = 
-                    m->calc_temp() ; // FRAME_OFFSET + + m->formal_size(); 
+                int header_size = m->calc_temp() ;
                 tmp->code_ref(s);
                 s << METHOD_SEP;
                 s << m->name << LABEL;
@@ -268,8 +267,7 @@ void CgenClassTable::code_methods() {
                         tmp->get_attr_table(),
                         tmp->get_method_table());
 
-                emit_pop_header(s,  header_size + m->formal_size());// + FRAME_OFFSET +
-//                    );
+                emit_pop_header(s,  header_size + m->formal_size());
 
                 emit_return(s);
             }
@@ -471,6 +469,7 @@ void CgenClassTable::build_inheritance_tree() {
     {
         l->hd()->fill_table();
     }
+    //
     INFO_OUT;
 }
 
@@ -699,5 +698,67 @@ void CgenNode::code_prot(ostream& s)
     
     INFO_OUT_AS;
 }
+void CgenNode::fill_table() {
+    int attr_offset = FRAME_OFFSET;
+    int meth_offset = 0;
+    // std::cout << get_name() << "\n";
+    if (parentnd) {
+        //std::cerr << "call for " << get_name() << "\n";
+        parentnd->fill_table();
+        attrTable = new std::vector<EnvElement>(
+                *parentnd->get_attr_table());
+        attr_offset += attrTable->size();
+        methodTable = new std::vector<EnvElement>(
+                *parentnd->get_method_table());
+        meth_offset += methodTable->size();
+    } else {
+        attrTable = new std::vector<EnvElement>();
+        methodTable = new std::vector<EnvElement>();
+    }
 
+    for (int i = features->first();
+            features->more(i);
+            i = features->next(i)) {
+        Feature_class * f = features->nth(i);
+        method_class * m = dynamic_cast<method_class*> (f);
+        attr_class * a = dynamic_cast<attr_class*> (f);
+        if (m) {
+            auto pred = [ = ](EnvElement a){return a.name == m->get_name();};
+            auto prev = std::find_if(
+                    methodTable->begin(),
+                    methodTable->end(),
+                    pred);
+            if (prev == methodTable->end()) {
+                EnvElement new_elem = EnvElement(get_name(), m->get_name(), meth_offset, Type::METHOD);
+                //std::cout << " for " << m->get_name() << "\n";
+                methodTable->push_back(new_elem);
+                ++meth_offset;
+            } else {
+                auto m_offset = prev->offset;
+                EnvElement new_elem = EnvElement(get_name(), m->get_name(), m_offset, Type::METHOD);
+                std::replace_if(methodTable->begin(), methodTable->end(),
+                        pred, new_elem);
+            }
+        }
+        if (a) {
+            attrTable->push_back(EnvElement(get_name(), a->get_name(), attr_offset, Type::OBJECT));
+            ++attr_offset;
+
+        }
+    }
+    max_inherits_id = id;
+    std::vector<CgenNodeP> list;
+    for (auto it = children; it; it = it->tl()) {
+        list.push_back(&(*it->hd()));
+        max_inherits_id = std::max(max_inherits_id, it->hd()->get_id());
+    }
+    for (; !list.empty();) {
+        CgenNodeP currNode = *list.rbegin();
+        list.pop_back();
+        for (auto it = currNode->get_children(); it; it = it->tl()) {
+            list.push_back(&(*it->hd()));
+        }
+        max_inherits_id = std::max(max_inherits_id, currNode->get_id());
+    }
+};
 
