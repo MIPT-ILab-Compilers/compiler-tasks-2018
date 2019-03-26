@@ -157,175 +157,15 @@ CgenClassTableP codegen_classtable;
 bool expr_is_const = false;
 
 void program_class::cgen(ostream &s) {
-    INFO_IN_AS;
     // spim wants comments to start with '#'
     s << "# start of generated code\n";
+    INFO_IN_AS;
 
     initialize_constants();
     codegen_classtable = new CgenClassTable(classes, s);
     codegen_classtable->code();
 
     s << "\n# end of generated code\n";
-    INFO_OUT_AS;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// coding strings, ints, and booleans
-//
-// Cool has three kinds of constants: strings, ints, and booleans.
-// This section defines code generation for each type.
-//
-// All string constants are listed in the global "stringtable" and have
-// type StringEntry.  StringEntry methods are defined both for String
-// constant definitions and references.
-//
-// All integer constants are listed in the global "inttable" and have
-// type IntEntry.  IntEntry methods are defined for Int
-// constant definitions and references.
-//
-// Since there are only two Bool values, there is no need for a table.
-// The two booleans are represented by instances of the class BoolConst,
-// which defines the definition and reference methods for Bools.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-//
-// Strings
-//
-
-void StringEntry::code_ref(ostream& s) {
-    INFO_IN_AS_EMIT;
-    s << STRCONST_PREFIX << index;
-    INFO_OUT_AS_EMIT;
-}
-
-//
-// Emit code for a constant String.
-// You should fill in the code naming the dispatch table.
-//
-
-void StringEntry::code_def(ostream& s, int stringclasstag) {
-    INFO_IN_AS;
-    IntEntryP lensym = inttable.add_int(len);
-
-    // Add -1 eye catcher
-    s << WORD << "-1" << endl;
-
-    code_ref(s);
-    s << LABEL // label
-            << WORD << stringclasstag << endl // tag
-            << WORD << (DEFAULT_OBJFIELDS + STRING_SLOTS + (len + 4) / 4) << endl // size
-            << WORD;
-
-
-    /***** Add dispatch information for class String ******/
-    s << "String" << DISPTAB_SUFFIX;
-    s << endl; // dispatch table
-    s << WORD;
-    lensym->code_ref(s);
-    s << endl; // string length
-    emit_string_constant(s, str); // ascii string
-    s << ALIGN; // align to word
-    INFO_OUT_AS;
-}
-
-//
-// StrTable::code_string
-// Generate a string object definition for every string constant in the 
-// stringtable.
-//
-
-void StrTable::code_string_table(ostream& s, int stringclasstag) {
-    INFO_IN_AS_EMIT;
-    for (List<StringEntry> *l = tbl; l; l = l->tl()) {
-        l->hd()->code_def(s, stringclasstag);
-    }
-    INFO_OUT_AS_EMIT;
-}
-
-//
-// Ints
-//
-
-void IntEntry::code_ref(ostream &s) {
-    INFO_IN_AS_EMIT;
-    s << INTCONST_PREFIX << index;
-    INFO_OUT_AS_EMIT;
-}
-
-//
-// Emit code for a constant Integer.
-// You should fill in the code naming the dispatch table.
-//
-
-void IntEntry::code_def(ostream &s, int intclasstag) {
-    INFO_IN_AS;
-    // Add -1 eye catcher
-    s << WORD << "-1" << endl;
-
-    code_ref(s);
-    s << LABEL // label
-            << WORD << intclasstag << endl // class tag
-            << WORD << (DEFAULT_OBJFIELDS + INT_SLOTS) << endl // object size
-            << WORD;
-
-    /***** Add dispatch information for class Int ******/
-    s << "Int" << DISPTAB_SUFFIX;
-    s << endl; // dispatch table
-    s << WORD << str << endl; // integer value
-    INFO_OUT_AS;
-}
-
-
-//
-// IntTable::code_string_table
-// Generate an Int object definition for every Int constant in the
-// inttable.
-//
-
-void IntTable::code_string_table(ostream &s, int intclasstag) {
-    INFO_IN_AS;
-    for (List<IntEntry> *l = tbl; l; l = l->tl())
-        l->hd()->code_def(s, intclasstag);
-    INFO_OUT_AS;
-}
-
-//
-// Bools
-//
-
-BoolConst::BoolConst(int i) : val(i) {
-    assert(i == 0 || i == 1);
-}
-
-void BoolConst::code_ref(ostream& s) const {
-    INFO_IN_AS_EMIT;
-    s << BOOLCONST_PREFIX << val;
-    INFO_OUT_AS_EMIT;
-}
-
-//
-// Emit code for a constant Bool.
-// You should fill in the code naming the dispatch table.
-//
-
-void BoolConst::code_def(ostream& s, int boolclasstag) {
-    INFO_IN_AS;
-    // Add -1 eye catcher
-    s << WORD << "-1" << endl;
-
-    code_ref(s);
-    s << LABEL // label
-            << WORD << boolclasstag << endl // class tag
-            << WORD << (DEFAULT_OBJFIELDS + BOOL_SLOTS) << endl // object size
-            << WORD;
-
-    /***** Add dispatch information for class Bool ******/
-    s << "Bool" << DISPTAB_SUFFIX;
-    s << endl; // dispatch table
-    s << WORD << val << endl; // value (0 or 1)
     INFO_OUT_AS;
 }
 
@@ -344,10 +184,10 @@ void BoolConst::code_def(ostream& s, int boolclasstag) {
 //
 //*****************************************************************
 
-void attr_class::code(std::ostream& s, Symbol self_class, Environment var, Environment met) {
+void attr_class::cgen(std::ostream& s, Symbol self_class, Environment var, Environment met) {
     INFO_IN
     if (init->get_type()) {
-        init->code(s, self_class, var, met);
+        init->cgen(s, self_class, var, met);
         auto pred = [ = ](EnvElement a){return a.name == name;};
         auto off = std::find_if(var->rbegin(), var->rend(), pred);
         int offset = 0;
@@ -360,7 +200,7 @@ void attr_class::code(std::ostream& s, Symbol self_class, Environment var, Envir
     INFO_OUT
 }
 
-void method_class::code(ostream& s, Symbol self_class, Environment var, Environment met) {
+void method_class::cgen(ostream& s, Symbol self_class, Environment var, Environment met) {
     INFO_IN
     init_alloc_temp();
     auto curr_var = new std::vector<EnvElement>(*var);
@@ -377,15 +217,14 @@ void method_class::code(ostream& s, Symbol self_class, Environment var, Environm
             s << " # unknown formal" << endl;
         }
     }
-    expr->code(s, self_class, curr_var, met);
+    expr->cgen(s, self_class, curr_var, met);
 //    var; = curr_var;
-
     INFO_OUT
 }
 
-void assign_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void assign_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    expr->code(s, self_class, var, met);
+    expr->cgen(s, self_class, var, met);
 
     auto pred = [ = ](EnvElement a){return a.name == name;};
     auto off_var = std::find_if(var->rbegin(), var->rend(), pred);
@@ -400,7 +239,7 @@ void assign_class::code(ostream &s, Symbol self_class, Environment var, Environm
     INFO_OUT_AS;
 }
 
-void static_dispatch_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void static_dispatch_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     Symbol type = type_name;
     if (type == SELF_TYPE) {
@@ -408,10 +247,10 @@ void static_dispatch_class::code(ostream &s, Symbol self_class, Environment var,
     }
 
     for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
-        actual->nth(i)->code(s, self_class, var, met);
+        actual->nth(i)->cgen(s, self_class, var, met);
         emit_push(ACC, s);
     }
-    expr->code(s, self_class, var, met);
+    expr->cgen(s, self_class, var, met);
 
     int good_label = create_label();
     emit_abort(good_label, line_number, DISPATHABORT, s);
@@ -424,12 +263,6 @@ void static_dispatch_class::code(ostream &s, Symbol self_class, Environment var,
     int offset = 1;
     if(off != table->end())
     {
-//        for(auto it = table->begin(); it != table->end(); ++it)
-//        {
-//            std::cout << " ==> " << it->name->get_string() << " offset : "
-//                    << it->offset << " " << it->self->get_string() << " \n";
-//        }
-//        std::cout << " -> curr off " << (off->offset  - FRAME_OFFSET)*WORD_SIZE << "\n";
         offset = off->offset;
     }
     else
@@ -448,7 +281,7 @@ void static_dispatch_class::code(ostream &s, Symbol self_class, Environment var,
     INFO_OUT_AS;
 }
 
-void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void dispatch_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     auto tmp_met = new std::vector<EnvElement>(*met);
     Symbol type = expr->get_type();
@@ -457,10 +290,10 @@ void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Enviro
     }
 
     for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
-        actual->nth(i)->code(s, self_class, var, tmp_met);
+        actual->nth(i)->cgen(s, self_class, var, tmp_met);
         emit_push(ACC, s);
     }
-    expr->code(s, self_class, var, tmp_met);
+    expr->cgen(s, self_class, var, tmp_met);
 
     int jump_label = create_label();
     emit_bne(ACC, ZERO, jump_label, s);
@@ -473,17 +306,10 @@ void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Enviro
     tmp_met = node->get_method_table();
     auto pred = [ = ](EnvElement a){return a.name == name;};
     auto off = std::find_if(tmp_met->rbegin(), tmp_met->rend(), pred);
-//    int offset = (off->offset);
 
     int offset = 1;
     if(off != tmp_met->rend())
     {
-//        for(auto it = met->begin(); it != met->end(); ++it)
-//        {
-//            std::cout << " ==> " << it->name->get_string() << " offset : "
-//                    << it->offset << " " << it->self->get_string() << " \n";
-//        }
-//        std::cout << " -> curr off " << off->offset*WORD_SIZE << "\n";
         offset = off->offset;
     }
     else
@@ -491,41 +317,39 @@ void dispatch_class::code(ostream &s, Symbol self_class, Environment var, Enviro
         assert(0);
     }
     
-    
     emit_label_def(jump_label, s);
     emit_load(T1, DISPTABLE_OFFSET, ACC, s);
     emit_load(T1, offset, T1, s);
     emit_jalr(T1, s);
-//    met = tmp_met;
     expr_is_const = true;
     INFO_OUT_AS;
 }
 
-void cond_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void cond_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     int else_label = create_label();
     int end_label = create_label();
-    pred->code(s, self_class, var, met);
+    pred->cgen(s, self_class, var, met);
     emit_load_bool(T3, falsebool, s);
     emit_beq(ACC, T3, else_label, s);
-    then_exp->code(s, self_class, var, met);
+    then_exp->cgen(s, self_class, var, met);
     emit_branch(end_label, s);
     emit_label_def(else_label, s);
-    else_exp->code(s, self_class, var, met);
+    else_exp->cgen(s, self_class, var, met);
     emit_label_def(end_label, s);
     expr_is_const = true;
     INFO_OUT_AS;
 }
 
-void loop_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void loop_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     int cond_label = create_label();
     int end_label = create_label();
     emit_label_def(cond_label, s);
-    pred->code(s, self_class, var, met);
+    pred->cgen(s, self_class, var, met);
     emit_load_bool(T3, falsebool, s);
     emit_beq(ACC, T3, end_label, s);
-    body->code(s, self_class, var, met);
+    body->cgen(s, self_class, var, met);
     emit_branch(cond_label, s);
     emit_label_def(end_label, s);
 
@@ -533,15 +357,11 @@ void loop_class::code(ostream &s, Symbol self_class, Environment var, Environmen
     INFO_OUT_AS;
 }
 
-static std::vector<std::pair<std::pair<int, int>, int>> vec;
+static std::vector<std::pair<std::pair<int, int>, int>> case_list;
 
-void push_vec(int x, int y, int c) {
-    vec.push_back(std::make_pair(std::make_pair(x, y), c));
-}
-
-void typcase_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void typcase_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    expr->code(s, self_class, var, met);
+    expr->cgen(s, self_class, var, met);
     int last_label = create_label();
     emit_abort(last_label, line_number, CASEABORT2, s);
     emit_label_def(last_label, s);
@@ -551,37 +371,38 @@ void typcase_class::code(ostream &s, Symbol self_class, Environment var, Environ
     int temp = alloc_temp() + FRAME_OFFSET;
     emit_store(ACC, temp, FP, s);
 
-    vec.clear();
+    case_list.clear();
     for (int i(cases->first()); cases->more(i); i = cases->next(i)) {
         Symbol type = cases->nth(i)->get_type_decl();
         CgenNodeP class_node = codegen_classtable->lookup(type);
-        push_vec(class_node->get_id(), class_node->get_max_id(), i);
+        case_list.push_back(std::make_pair(std::make_pair(class_node->get_id(),
+                class_node->get_max_id()), i));
     }
 
     auto lmbd = [](auto a, auto b) {
         return a.first.first >= b.first.first && a.first.second <= b.first.second;
     };
-    std::sort(vec.begin(), vec.end(), lmbd);
+    std::sort(case_list.begin(), case_list.end(), lmbd);
 
-    int x, y, c, cur_label, next_label = create_label();
-    for (auto vec_leg = vec.begin(); vec_leg != vec.end();) {
-        x = vec_leg->first.first;
-        y = vec_leg->first.second;
-        c = vec_leg->second;
-        vec_leg++;
+    int id = 0, max_id = 0, node_idx = 0;
+    int cur_label = 0, next_label = create_label();
+    for (auto it = case_list.begin(); it != case_list.end();) {
+        id=  it->first.first;
+        max_id = it->first.second;
+        node_idx = it->second;
+        it++;
 
         cur_label = next_label;
         next_label = create_label();
 
         emit_label_def(cur_label, s);
-        emit_blti(T3, x, next_label, s);
-        emit_bgti(T3, y, next_label, s);
+        emit_blti(T3, id, next_label, s);
+        emit_bgti(T3, max_id, next_label, s);
 
-        Case br = cases->nth(c);
+        Case br = cases->nth(node_idx);
         auto tmp_var = new std::vector<EnvElement>(*var);
         tmp_var->push_back(EnvElement(self_class, br->get_name(), temp, Type::METHOD));
-        br->get_expr()->code(s, self_class, tmp_var, met);
-//        var = tmp_var;
+        br->get_expr()->cgen(s, self_class, tmp_var, met);
         emit_branch(last_label, s);
     }
 
@@ -594,15 +415,15 @@ void typcase_class::code(ostream &s, Symbol self_class, Environment var, Environ
     INFO_OUT_AS;
 }
 
-void block_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void block_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     for (int i = body->first(); body->more(i); i = body->next(i)) {
-        body->nth(i)->code(s, self_class, var, met);
+        body->nth(i)->cgen(s, self_class, var, met);
     }
     INFO_OUT_AS;
 }
 
-void let_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void let_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     s << " # let code for name " << identifier << "\n";
     auto curr_var = new std::vector<EnvElement>(*var);
@@ -623,22 +444,21 @@ void let_class::code(ostream &s, Symbol self_class, Environment var, Environment
         }
     }
     if (!filled) {
-        init->code(s, self_class, curr_var, met);
+        init->cgen(s, self_class, curr_var, met);
     }
     EnvElement new_elem = EnvElement(curr_node->get_name(), identifier, offset, Type::METHOD);
     curr_var->push_back(new_elem);
     emit_store(ACC, offset, FP, s);
-    body->code(s, self_class, curr_var, met);
-//    var = curr_var;
+    body->cgen(s, self_class, curr_var, met);
     INFO_OUT_AS;
 }
 
 #define ARITH_CODE( cmd, s, self_class, var, met)\
 {\
-	e1->code( s, self_class, var, met);\
+	e1->cgen( s, self_class, var, met);\
 	bool e1_is_const = expr_is_const;\
 	emit_push( ACC, s);\
-	e2->code( s, self_class, var, met);\
+	e2->cgen( s, self_class, var, met);\
 	bool e2_is_const = expr_is_const;\
 	emit_move( T3, ACC, s);\
 	if ( e2_is_const)\
@@ -668,33 +488,33 @@ void let_class::code(ostream &s, Symbol self_class, Environment var, Environment
 }        
 
 
-void plus_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void plus_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     ARITH_CODE(add, s, self_class, var, met);
     INFO_OUT_AS;
 }
 
-void sub_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void sub_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     ARITH_CODE(sub, s, self_class, var, met);
     INFO_OUT_AS;
 }
 
-void mul_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void mul_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     ARITH_CODE(mul, s, self_class, var, met);
     INFO_OUT_AS;
 }
 
-void divide_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void divide_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     ARITH_CODE(div, s, self_class, var, met);
     INFO_OUT_AS;
 }
 
-void neg_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void neg_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->code(s, self_class, var, met);
+    e1->cgen(s, self_class, var, met);
     if (expr_is_const) {
         emit_push(ACC, s);
         emit_new(Int, s);
@@ -710,12 +530,12 @@ void neg_class::code(ostream &s, Symbol self_class, Environment var, Environment
     INFO_OUT_AS;
 }
 
-void lt_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void lt_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->code(s, self, var, met);
+    e1->cgen(s, self, var, met);
     emit_push(T4, s);
     emit_fetch_int(T4, ACC, s);
-    e2->code(s, self, var, met);
+    e2->cgen(s, self, var, met);
     emit_fetch_int(T3, ACC, s);
 
     int end_label = create_label();
@@ -728,11 +548,11 @@ void lt_class::code(ostream &s, Symbol self_class, Environment var, Environment 
     INFO_OUT_AS;
 }
 
-void eq_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void eq_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->code(s, self_class, var, met);
+    e1->cgen(s, self_class, var, met);
     emit_push(ACC, s);
-    e2->code(s, self_class, var, met);
+    e2->cgen(s, self_class, var, met);
     emit_pop(T2, s);
 
     emit_move(T1, ACC, s);
@@ -747,12 +567,12 @@ void eq_class::code(ostream &s, Symbol self_class, Environment var, Environment 
     INFO_OUT_AS;
 }
 
-void leq_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void leq_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->code(s, self, var, met);
+    e1->cgen(s, self, var, met);
     emit_push(T4, s);
     emit_fetch_int(T4, ACC, s);
-    e2->code(s, self, var, met);
+    e2->cgen(s, self, var, met);
     emit_fetch_int(T3, ACC, s);
 
     int end_label = create_label();
@@ -764,9 +584,9 @@ void leq_class::code(ostream &s, Symbol self_class, Environment var, Environment
     INFO_OUT_AS;
 }
 
-void comp_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void comp_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->code(s, self, var, met);
+    e1->cgen(s, self, var, met);
     emit_load_bool(T3, falsebool, s);
     emit_xor(ACC, T3, ACC, s);
     emit_load_bool(T3, truebool, s);
@@ -774,7 +594,7 @@ void comp_class::code(ostream &s, Symbol self_class, Environment var, Environmen
     INFO_OUT_AS;
 }
 
-void int_const_class::code(ostream& s, Symbol self_class, Environment var, Environment met) {
+void int_const_class::cgen(ostream& s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     //
     // Need to be sure we have an IntEntry *, not an arbitrary Symbol
@@ -784,19 +604,19 @@ void int_const_class::code(ostream& s, Symbol self_class, Environment var, Envir
     INFO_OUT_AS;
 }
 
-void string_const_class::code(ostream& s, Symbol self_class, Environment var, Environment met) {
+void string_const_class::cgen(ostream& s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     emit_load_string(ACC, stringtable.lookup_string(token->get_string()), s);
     INFO_OUT_AS;
 }
 
-void bool_const_class::code(ostream& s, Symbol self_class, Environment var, Environment met) {
+void bool_const_class::cgen(ostream& s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     emit_load_bool(ACC, BoolConst(val), s);
     INFO_OUT_AS;
 }
 
-void new__class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void new__class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     if (type_name == SELF_TYPE) {
         // Calculate address
@@ -831,9 +651,9 @@ void new__class::code(ostream &s, Symbol self_class, Environment var, Environmen
     INFO_OUT_AS;
 }
 
-void isvoid_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void isvoid_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->code(s, self_class, var, met);
+    e1->cgen(s, self_class, var, met);
 
     int end_label = create_label();
     emit_load_bool(T3, falsebool, s);
@@ -845,13 +665,13 @@ void isvoid_class::code(ostream &s, Symbol self_class, Environment var, Environm
     INFO_OUT_AS;
 }
 
-void no_expr_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void no_expr_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     emit_load_imm(ACC, 0, s);
     INFO_OUT_AS;
 }
 
-void object_class::code(ostream &s, Symbol self_class, Environment var, Environment met) {
+void object_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
     if (name != self && name != self_class) {
         auto pred = [ = ](EnvElement a){return a.name == name;};
@@ -881,38 +701,29 @@ void object_class::code(ostream &s, Symbol self_class, Environment var, Environm
 }
 
 int method_class::calc_temp() {
-TEMPS_IN
-//std::cout << expr->calc_temp() << " : for method\n";
+    TEMPS_IN
+    //std::cout << expr->calc_temp() << " : for method\n";
     int ret = expr->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
 int attr_class::calc_temp() {
-TEMPS_IN
+    TEMPS_IN
     int ret = init->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
-int assign_class::calc_temp() {TEMPS_IN
+int assign_class::calc_temp() {
+    TEMPS_IN
     int ret = expr->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
-int static_dispatch_class::calc_temp() {TEMPS_IN
-    int ret = expr->calc_temp();
-    for (int i = actual->first();
-            actual->more(i);
-            i = actual->next(i)) {
-        ret = std::max(ret, actual->nth(i)->calc_temp());
-    }
-    TEMPS_OUT;
-    return ret;
-}
-
-int dispatch_class::calc_temp() {TEMPS_IN
+int static_dispatch_class::calc_temp() {
+    TEMPS_IN
     int ret = expr->calc_temp();
     for (int i = actual->first();
             actual->more(i);
@@ -923,7 +734,20 @@ int dispatch_class::calc_temp() {TEMPS_IN
     return ret;
 }
 
-int cond_class::calc_temp() {TEMPS_IN
+int dispatch_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    for (int i = actual->first();
+            actual->more(i);
+            i = actual->next(i)) {
+        ret = std::max(ret, actual->nth(i)->calc_temp());
+    }
+    TEMPS_OUT;
+    return ret;
+}
+
+int cond_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(
             then_exp->calc_temp(),
             else_exp->calc_temp());
@@ -932,7 +756,8 @@ int cond_class::calc_temp() {TEMPS_IN
     return ret;
 }
 
-int loop_class::calc_temp() {TEMPS_IN
+int loop_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(
             pred->calc_temp(),
             body->calc_temp());
@@ -940,7 +765,8 @@ int loop_class::calc_temp() {TEMPS_IN
     return ret;
 }
 
-int block_class::calc_temp() {TEMPS_IN
+int block_class::calc_temp() {
+    TEMPS_IN
     int ret = 0;
     for (int i = body->first();
             body->more(i);
@@ -951,116 +777,135 @@ int block_class::calc_temp() {TEMPS_IN
     return ret;
 }
 
-int let_class::calc_temp() {TEMPS_IN
+int let_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(init->calc_temp(),
             body->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int plus_class::calc_temp() {TEMPS_IN
+int plus_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int sub_class::calc_temp() {TEMPS_IN
+int sub_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int mul_class::calc_temp() {TEMPS_IN
+int mul_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int divide_class::calc_temp() {TEMPS_IN
+int divide_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int neg_class::calc_temp() {TEMPS_IN
+int neg_class::calc_temp() {
+    TEMPS_IN
     int ret = e1->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
-int lt_class::calc_temp() {TEMPS_IN
+int lt_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int eq_class::calc_temp() {TEMPS_IN
+int eq_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int leq_class::calc_temp() {TEMPS_IN
+int leq_class::calc_temp() {
+    TEMPS_IN
     int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
     TEMPS_OUT;
     return ret;
 }
 
-int comp_class::calc_temp() {TEMPS_IN
+int comp_class::calc_temp() {
+    TEMPS_IN
     int ret = e1->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
-int int_const_class::calc_temp() {TEMPS_IN
+int int_const_class::calc_temp() {
+    TEMPS_IN
     int ret = 0;
     TEMPS_OUT;
     return ret;
 }
 
-int bool_const_class::calc_temp() {TEMPS_IN
+int bool_const_class::calc_temp() {
+    TEMPS_IN
     int ret = 0;
     TEMPS_OUT;
     return ret;
 }
 
-int string_const_class::calc_temp() {TEMPS_IN
+int string_const_class::calc_temp() {
+    TEMPS_IN
     int ret = 0;
     TEMPS_OUT;
     return ret;
 }
 
-int new__class::calc_temp() {TEMPS_IN
+int new__class::calc_temp() {
+    TEMPS_IN
     int ret = 1;
     TEMPS_OUT;
     return ret;
 }
 
-int isvoid_class::calc_temp() {TEMPS_IN
+int isvoid_class::calc_temp() {
+    TEMPS_IN
     int ret = e1->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
-int no_expr_class::calc_temp() {TEMPS_IN
+int no_expr_class::calc_temp() {
+    TEMPS_IN
     int ret = 0;
     TEMPS_OUT;
     return ret;
 }
 
-int object_class::calc_temp() {TEMPS_IN
+int object_class::calc_temp() {
+    TEMPS_IN
     int ret = 0;
     TEMPS_OUT;
     return ret;
 }
 
-int branch_class::calc_temp() {TEMPS_IN
+int branch_class::calc_temp() {
+    TEMPS_IN
     int ret = expr->calc_temp();
     TEMPS_OUT;
     return ret;
 }
 
-int typcase_class::calc_temp() {TEMPS_IN
+int typcase_class::calc_temp() {
+    TEMPS_IN
     int ret = expr->calc_temp();
     for (int i = cases->first();
             cases->more(i);

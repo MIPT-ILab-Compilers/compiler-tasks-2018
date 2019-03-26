@@ -1,3 +1,165 @@
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// coding strings, ints, and booleans
+//
+// Cool has three kinds of constants: strings, ints, and booleans.
+// This section defines code generation for each type.
+//
+// All string constants are listed in the global "stringtable" and have
+// type StringEntry.  StringEntry methods are defined both for String
+// constant definitions and references.
+//
+// All integer constants are listed in the global "inttable" and have
+// type IntEntry.  IntEntry methods are defined for Int
+// constant definitions and references.
+//
+// Since there are only two Bool values, there is no need for a table.
+// The two booleans are represented by instances of the class BoolConst,
+// which defines the definition and reference methods for Bools.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+//
+// Strings
+//
+
+void StringEntry::code_ref(ostream& s) {
+    INFO_IN_AS_EMIT;
+    s << STRCONST_PREFIX << index;
+    INFO_OUT_AS_EMIT;
+}
+
+//
+// Emit code for a constant String.
+// You should fill in the code naming the dispatch table.
+//
+
+void StringEntry::code_def(ostream& s, int stringclasstag) {
+    INFO_IN_AS;
+    IntEntryP lensym = inttable.add_int(len);
+
+    // Add -1 eye catcher
+    s << WORD << "-1" << endl;
+
+    code_ref(s);
+    s << LABEL // label
+            << WORD << stringclasstag << endl // tag
+            << WORD << (DEFAULT_OBJFIELDS + STRING_SLOTS + (len + 4) / 4) << endl // size
+            << WORD;
+
+
+    /***** Add dispatch information for class String ******/
+    s << "String" << DISPTAB_SUFFIX;
+    s << endl; // dispatch table
+    s << WORD;
+    lensym->code_ref(s);
+    s << endl; // string length
+    emit_string_constant(s, str); // ascii string
+    s << ALIGN; // align to word
+    INFO_OUT_AS;
+}
+
+//
+// StrTable::code_string
+// Generate a string object definition for every string constant in the 
+// stringtable.
+//
+
+void StrTable::code_string_table(ostream& s, int stringclasstag) {
+    INFO_IN_AS_EMIT;
+    for (List<StringEntry> *l = tbl; l; l = l->tl()) {
+        l->hd()->code_def(s, stringclasstag);
+    }
+    INFO_OUT_AS_EMIT;
+}
+
+//
+// Ints
+//
+
+void IntEntry::code_ref(ostream &s) {
+    INFO_IN_AS_EMIT;
+    s << INTCONST_PREFIX << index;
+    INFO_OUT_AS_EMIT;
+}
+
+//
+// Emit code for a constant Integer.
+// You should fill in the code naming the dispatch table.
+//
+
+void IntEntry::code_def(ostream &s, int intclasstag) {
+    INFO_IN_AS;
+    // Add -1 eye catcher
+    s << WORD << "-1" << endl;
+
+    code_ref(s);
+    s << LABEL // label
+            << WORD << intclasstag << endl // class tag
+            << WORD << (DEFAULT_OBJFIELDS + INT_SLOTS) << endl // object size
+            << WORD;
+
+    /***** Add dispatch information for class Int ******/
+    s << "Int" << DISPTAB_SUFFIX;
+    s << endl; // dispatch table
+    s << WORD << str << endl; // integer value
+    INFO_OUT_AS;
+}
+
+
+//
+// IntTable::code_string_table
+// Generate an Int object definition for every Int constant in the
+// inttable.
+//
+
+void IntTable::code_string_table(ostream &s, int intclasstag) {
+    INFO_IN_AS;
+    for (List<IntEntry> *l = tbl; l; l = l->tl())
+        l->hd()->code_def(s, intclasstag);
+    INFO_OUT_AS;
+}
+
+//
+// Bools
+//
+
+BoolConst::BoolConst(int i) : val(i) {
+    assert(i == 0 || i == 1);
+}
+
+void BoolConst::code_ref(ostream& s) const {
+    INFO_IN_AS_EMIT;
+    s << BOOLCONST_PREFIX << val;
+    INFO_OUT_AS_EMIT;
+}
+
+//
+// Emit code for a constant Bool.
+// You should fill in the code naming the dispatch table.
+//
+
+void BoolConst::code_def(ostream& s, int boolclasstag) {
+    INFO_IN_AS;
+    // Add -1 eye catcher
+    s << WORD << "-1" << endl;
+
+    code_ref(s);
+    s << LABEL // label
+            << WORD << boolclasstag << endl // class tag
+            << WORD << (DEFAULT_OBJFIELDS + BOOL_SLOTS) << endl // object size
+            << WORD;
+
+    /***** Add dispatch information for class Bool ******/
+    s << "Bool" << DISPTAB_SUFFIX;
+    s << endl; // dispatch table
+    s << WORD << val << endl; // value (0 or 1)
+    INFO_OUT_AS;
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //
 //  CgenClassTable methods
@@ -262,7 +424,7 @@ void CgenClassTable::code_methods() {
 
                 emit_push_header(s, header_size);
 
-                m->code(s,
+                m->cgen(s,
                         tmp->get_name(),
                         tmp->get_attr_table(),
                         tmp->get_method_table());
@@ -663,7 +825,7 @@ void CgenNode::emit_init(ostream& s, int header_size)
         attr_class * attr = dynamic_cast<attr_class*>(f);
 		if (attr)
 		{
-			attr->code(s,
+			attr->cgen(s,
                        get_name(),
                        get_attr_table(),
                        get_method_table());
