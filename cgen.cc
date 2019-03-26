@@ -186,17 +186,7 @@ void program_class::cgen(ostream &s) {
 
 void attr_class::cgen(std::ostream& s, Symbol self_class, Environment var, Environment met) {
     INFO_IN
-    if (init->get_type()) {
-        init->cgen(s, self_class, var, met);
-        auto pred = [ = ](EnvElement a){return a.name == name;};
-        auto off = std::find_if(var->rbegin(), var->rend(), pred);
-        int offset = 0;
-        if (off != var->rend()) {
-            offset = off->offset;
-        }
-        s << "# attribute " << name << " was initailized as a " << init->get_type() << endl;
-        emit_store(ACC, offset, SELF, s);
-    }
+
     INFO_OUT
 }
 
@@ -204,7 +194,7 @@ void method_class::cgen(ostream& s, Symbol self_class, Environment var, Environm
     INFO_IN
     init_alloc_temp();
     auto curr_var = new std::vector<EnvElement>(*var);
-    int size = calc_temp() + formals->len(); //FRAME_OFFSET + 
+    int size = calc_temp() + formals->len();
 
     int cnt = FRAME_OFFSET + size;
     for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
@@ -218,7 +208,6 @@ void method_class::cgen(ostream& s, Symbol self_class, Environment var, Environm
         }
     }
     expr->cgen(s, self_class, curr_var, met);
-//    var; = curr_var;
     INFO_OUT
 }
 
@@ -327,17 +316,7 @@ void dispatch_class::cgen(ostream &s, Symbol self_class, Environment var, Enviro
 
 void cond_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    int else_label = create_label();
-    int end_label = create_label();
-    pred->cgen(s, self_class, var, met);
-    emit_load_bool(T3, falsebool, s);
-    emit_beq(ACC, T3, else_label, s);
-    then_exp->cgen(s, self_class, var, met);
-    emit_branch(end_label, s);
-    emit_label_def(else_label, s);
-    else_exp->cgen(s, self_class, var, met);
-    emit_label_def(end_label, s);
-    expr_is_const = true;
+
     INFO_OUT_AS;
 }
 
@@ -417,9 +396,7 @@ void typcase_class::cgen(ostream &s, Symbol self_class, Environment var, Environ
 
 void block_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    for (int i = body->first(); body->more(i); i = body->next(i)) {
-        body->nth(i)->cgen(s, self_class, var, met);
-    }
+
     INFO_OUT_AS;
 }
 
@@ -453,62 +430,28 @@ void let_class::cgen(ostream &s, Symbol self_class, Environment var, Environment
     INFO_OUT_AS;
 }
 
-#define ARITH_CODE( cmd, s, self_class, var, met)\
-{\
-	e1->cgen( s, self_class, var, met);\
-	bool e1_is_const = expr_is_const;\
-	emit_push( ACC, s);\
-	e2->cgen( s, self_class, var, met);\
-	bool e2_is_const = expr_is_const;\
-	emit_move( T3, ACC, s);\
-	if ( e2_is_const)\
-	{\
-		if ( !e1_is_const)\
-		{\
-			emit_pop( T1, s);\
-			emit_move( ACC, T1, s);\
-		}\
-		else\
-		{\
-			emit_push( T3, s);\
-			emit_new( Int, s);\
-			emit_pop( T3, s);\
-			emit_pop( T1, s);\
-		}\
-	}\
-	else\
-	{\
-			emit_pop( T1, s);\
-	}\
-	emit_fetch_int( T1, T1, s);\
-	emit_fetch_int( T3, T3, s);\
-	emit_##cmd( T3, T1, T3, s);\
-	emit_store_int( T3, ACC, s);\
-	expr_is_const = false;\
-}        
-
 
 void plus_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    ARITH_CODE(add, s, self_class, var, met);
+
     INFO_OUT_AS;
 }
 
 void sub_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    ARITH_CODE(sub, s, self_class, var, met);
+
     INFO_OUT_AS;
 }
 
 void mul_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    ARITH_CODE(mul, s, self_class, var, met);
+
     INFO_OUT_AS;
 }
 
 void divide_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    ARITH_CODE(div, s, self_class, var, met);
+
     INFO_OUT_AS;
 }
 
@@ -532,38 +475,13 @@ void neg_class::cgen(ostream &s, Symbol self_class, Environment var, Environment
 
 void lt_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->cgen(s, self, var, met);
-    emit_push(T4, s);
-    emit_fetch_int(T4, ACC, s);
-    e2->cgen(s, self, var, met);
-    emit_fetch_int(T3, ACC, s);
-
-    int end_label = create_label();
-    emit_load_bool(ACC, truebool, s);
-    emit_blt(T4, T3, end_label, s);
-    emit_load_bool(ACC, falsebool, s);
-    emit_label_def(end_label, s);
-    emit_pop(T4, s);
 
     INFO_OUT_AS;
 }
 
 void eq_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->cgen(s, self_class, var, met);
-    emit_push(ACC, s);
-    e2->cgen(s, self_class, var, met);
-    emit_pop(T2, s);
 
-    emit_move(T1, ACC, s);
-    emit_load_bool(A1, falsebool, s);
-    emit_load_bool(ACC, truebool, s);
-
-    int good_label = create_label();
-    emit_xor(T3, T1, T2, s);
-    emit_beqz(T3, good_label, s);
-    emit_jal(EQUALITY_TEST, s);
-    emit_label_def(good_label, s);
     INFO_OUT_AS;
 }
 
@@ -586,11 +504,7 @@ void leq_class::cgen(ostream &s, Symbol self_class, Environment var, Environment
 
 void comp_class::cgen(ostream &s, Symbol self_class, Environment var, Environment met) {
     INFO_IN_AS;
-    e1->cgen(s, self, var, met);
-    emit_load_bool(T3, falsebool, s);
-    emit_xor(ACC, T3, ACC, s);
-    emit_load_bool(T3, truebool, s);
-    emit_xor(ACC, T3, ACC, s);
+
     INFO_OUT_AS;
 }
 
@@ -698,221 +612,5 @@ void object_class::cgen(ostream &s, Symbol self_class, Environment var, Environm
         emit_move(ACC, SELF, s);
     }
     INFO_OUT_AS;
-}
-
-int method_class::calc_temp() {
-    TEMPS_IN
-    //std::cout << expr->calc_temp() << " : for method\n";
-    int ret = expr->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int attr_class::calc_temp() {
-    TEMPS_IN
-    int ret = init->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int assign_class::calc_temp() {
-    TEMPS_IN
-    int ret = expr->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int static_dispatch_class::calc_temp() {
-    TEMPS_IN
-    int ret = expr->calc_temp();
-    for (int i = actual->first();
-            actual->more(i);
-            i = actual->next(i)) {
-        ret = std::max(ret, actual->nth(i)->calc_temp());
-    }
-    TEMPS_OUT;
-    return ret;
-}
-
-int dispatch_class::calc_temp() {
-    TEMPS_IN
-    int ret = expr->calc_temp();
-    for (int i = actual->first();
-            actual->more(i);
-            i = actual->next(i)) {
-        ret = std::max(ret, actual->nth(i)->calc_temp());
-    }
-    TEMPS_OUT;
-    return ret;
-}
-
-int cond_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(
-            then_exp->calc_temp(),
-            else_exp->calc_temp());
-    ret = std::max(ret, pred->calc_temp());
-    TEMPS_OUT;
-    return ret;
-}
-
-int loop_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(
-            pred->calc_temp(),
-            body->calc_temp());
-    TEMPS_OUT;
-    return ret;
-}
-
-int block_class::calc_temp() {
-    TEMPS_IN
-    int ret = 0;
-    for (int i = body->first();
-            body->more(i);
-            i = body->next(i)) {
-        ret = std::max(ret, body->nth(i)->calc_temp());
-    }
-    TEMPS_OUT;
-    return ret;
-}
-
-int let_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(init->calc_temp(),
-            body->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int plus_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int sub_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int mul_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int divide_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int neg_class::calc_temp() {
-    TEMPS_IN
-    int ret = e1->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int lt_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int eq_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int leq_class::calc_temp() {
-    TEMPS_IN
-    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
-    TEMPS_OUT;
-    return ret;
-}
-
-int comp_class::calc_temp() {
-    TEMPS_IN
-    int ret = e1->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int int_const_class::calc_temp() {
-    TEMPS_IN
-    int ret = 0;
-    TEMPS_OUT;
-    return ret;
-}
-
-int bool_const_class::calc_temp() {
-    TEMPS_IN
-    int ret = 0;
-    TEMPS_OUT;
-    return ret;
-}
-
-int string_const_class::calc_temp() {
-    TEMPS_IN
-    int ret = 0;
-    TEMPS_OUT;
-    return ret;
-}
-
-int new__class::calc_temp() {
-    TEMPS_IN
-    int ret = 1;
-    TEMPS_OUT;
-    return ret;
-}
-
-int isvoid_class::calc_temp() {
-    TEMPS_IN
-    int ret = e1->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int no_expr_class::calc_temp() {
-    TEMPS_IN
-    int ret = 0;
-    TEMPS_OUT;
-    return ret;
-}
-
-int object_class::calc_temp() {
-    TEMPS_IN
-    int ret = 0;
-    TEMPS_OUT;
-    return ret;
-}
-
-int branch_class::calc_temp() {
-    TEMPS_IN
-    int ret = expr->calc_temp();
-    TEMPS_OUT;
-    return ret;
-}
-
-int typcase_class::calc_temp() {
-    TEMPS_IN
-    int ret = expr->calc_temp();
-    for (int i = cases->first();
-            cases->more(i);
-            i = cases->next(i)) {
-        ret = std::max(ret, cases->nth(i)->calc_temp() + 1);
-    }
-    TEMPS_OUT;
-    return ret;
 }
 

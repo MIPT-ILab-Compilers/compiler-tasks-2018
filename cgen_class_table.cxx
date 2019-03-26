@@ -924,3 +924,218 @@ void CgenNode::fill_table() {
     }
 };
 
+
+int method_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int attr_class::calc_temp() {
+    TEMPS_IN
+    int ret = init->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int assign_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int static_dispatch_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    for (int i = actual->first();
+            actual->more(i);
+            i = actual->next(i)) {
+        ret = std::max(ret, actual->nth(i)->calc_temp());
+    }
+    TEMPS_OUT;
+    return ret;
+}
+
+int dispatch_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    for (int i = actual->first();
+            actual->more(i);
+            i = actual->next(i)) {
+        ret = std::max(ret, actual->nth(i)->calc_temp());
+    }
+    TEMPS_OUT;
+    return ret;
+}
+
+int cond_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(
+            then_exp->calc_temp(),
+            else_exp->calc_temp());
+    ret = std::max(ret, pred->calc_temp());
+    TEMPS_OUT;
+    return ret;
+}
+
+int loop_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(
+            pred->calc_temp(),
+            body->calc_temp());
+    TEMPS_OUT;
+    return ret;
+}
+
+int block_class::calc_temp() {
+    TEMPS_IN
+    int ret = 0;
+    for (int i = body->first();
+            body->more(i);
+            i = body->next(i)) {
+        ret = std::max(ret, body->nth(i)->calc_temp());
+    }
+    TEMPS_OUT;
+    return ret;
+}
+
+int let_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(init->calc_temp(),
+            body->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int plus_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int sub_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int mul_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int divide_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int neg_class::calc_temp() {
+    TEMPS_IN
+    int ret = e1->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int lt_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int eq_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int leq_class::calc_temp() {
+    TEMPS_IN
+    int ret = std::max(e1->calc_temp(), e2->calc_temp() + 1);
+    TEMPS_OUT;
+    return ret;
+}
+
+int comp_class::calc_temp() {
+    TEMPS_IN
+    int ret = e1->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int int_const_class::calc_temp() {
+    TEMPS_IN
+    int ret = 0;
+    TEMPS_OUT;
+    return ret;
+}
+
+int bool_const_class::calc_temp() {
+    TEMPS_IN
+    int ret = 0;
+    TEMPS_OUT;
+    return ret;
+}
+
+int string_const_class::calc_temp() {
+    TEMPS_IN
+    int ret = 0;
+    TEMPS_OUT;
+    return ret;
+}
+
+int new__class::calc_temp() {
+    TEMPS_IN
+    int ret = 1;
+    TEMPS_OUT;
+    return ret;
+}
+
+int isvoid_class::calc_temp() {
+    TEMPS_IN
+    int ret = e1->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int no_expr_class::calc_temp() {
+    TEMPS_IN
+    int ret = 0;
+    TEMPS_OUT;
+    return ret;
+}
+
+int object_class::calc_temp() {
+    TEMPS_IN
+    int ret = 0;
+    TEMPS_OUT;
+    return ret;
+}
+
+int branch_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    TEMPS_OUT;
+    return ret;
+}
+
+int typcase_class::calc_temp() {
+    TEMPS_IN
+    int ret = expr->calc_temp();
+    for (int i = cases->first();
+            cases->more(i);
+            i = cases->next(i)) {
+        ret = std::max(ret, cases->nth(i)->calc_temp() + 1);
+    }
+    TEMPS_OUT;
+    return ret;
+}
