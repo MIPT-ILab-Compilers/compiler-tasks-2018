@@ -77,8 +77,8 @@
 #define SELF "$s0"		// Ptr to self (callee saves) 
 #define T1   "$t1"		// Temporary 1 
 #define T2   "$t2"		// Temporary 2 
-#define T3   "$t0"		// Temporary 3 
-#define T4   "$s1"		// Temporary 4 
+#define T3   "$t3"		// Temporary 3
+#define T4   "$t4"		// Temporary 4
 
 #define SP   "$sp"		// Stack pointer 
 #define FP   "$fp"		// Frame pointer 
@@ -87,8 +87,8 @@
 //
 // Opcodes
 //
-#define JALR  "\tjalr\t"  
-#define JAL   "\tjal\t"                 
+#define JALR  "\tjalr\t"
+#define JAL   "\tjal\t"
 #define RET   "\tjr\t" RA "\t"
 
 #define SW    "\tsw\t"
@@ -111,7 +111,6 @@
 #define BRANCH   "\tb\t"
 #define BEQ      "\tbeq\t"
 #define BNE      "\tbne\t"
-#define BLEQ     "\tble\t"
 #define BLT      "\tblt\t"
 #define BGT      "\tbgt\t"
 

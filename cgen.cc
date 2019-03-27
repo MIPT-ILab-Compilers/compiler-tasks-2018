@@ -590,7 +590,8 @@ void object_class::cgen(ostream &s, Symbol self_class, Environment var, Environm
     if (name != self && name != self_class) {
         auto pred = [ = ](EnvElement a){return a.name == name;};
         auto off_var = std::find_if(var->rbegin(), var->rend(), pred);
-        
+
+#ifdef DEBUG_AS
         for(auto it = var->begin(); it != var->end(); ++it)
         {
             s << "#  ==> " << it->name->get_string() << " offset : "
@@ -598,17 +599,23 @@ void object_class::cgen(ostream &s, Symbol self_class, Environment var, Environm
                     (it->type == Type::OBJECT ? "O" : "M") << " \n";
         }
         s << "#  -> curr off " << (off_var->offset)*WORD_SIZE << "\n";
-        
+#endif
         if (off_var->type == Type::OBJECT) {
+#ifdef DEBUG_AS
             s << "# for " << name << " self \n";
+#endif
             emit_load(ACC, off_var->offset, SELF, s);
         } else {
+#ifdef DEBUG_AS
             s << "# for " << name << " method \n";
+#endif
             emit_load(ACC, off_var->offset, FP, s);
         }
         expr_is_const = true;
     } else {
+#ifdef DEBUG_AS
         s << "# for " << name << " SELF \n";
+#endif
         emit_move(ACC, SELF, s);
     }
     INFO_OUT_AS;

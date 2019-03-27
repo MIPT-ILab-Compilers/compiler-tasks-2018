@@ -343,17 +343,6 @@ static void emit_bne(char *src1, char *src2, int label, ostream &s) {
     INFO_OUT_AS_EMIT;
 }
 
-static void emit_bleq(char *src1, char *src2, int label, ostream &s) {
-    INFO_IN_AS_EMIT;
-    s << BLEQ << src1 << " " << src2 << " ";
-    emit_label_ref(label, s);
-#ifdef DEBUG_AS_NAMES
-    s << " # " << function_name;
-#endif
-    s << endl;
-    INFO_OUT_AS_EMIT;
-}
-
 static void emit_blt(char *src1, char *src2, int label, ostream &s) {
     INFO_IN_AS_EMIT;
     s << BLT << src1 << " " << src2 << " ";
